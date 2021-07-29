@@ -280,9 +280,87 @@ fig.update_layout(
                 borderwidth=4)
 )
 
-fig.show()
+#fig.show()
 
 # Andrews Phi plot
-plotAndrewsTensor2D(3)
+#plotAndrewsTensor2D(3)
+
+transformer = pp.StandardScaler()
+w = transformer.fit_transform(X)
+u,s,v = np.linalg.svd(w)
+print(v)
+
+# Example of singular values for the iris mappings
+n_samples = 256
+t = np.linspace(0,1,n_samples)
+
+psi = np.zeros((2,4,n_samples))
+for k in range(4):
+    psi[0,k,:] = np.cos(2*np.pi*(k+1)*t)/np.sqrt(2) # sqrt(2) / sqrt(d) for d=4
+    psi[1,k,:] = np.sin(2*np.pi*(k+1)*t)/np.sqrt(2)
+
+phi = np.zeros((2,4,n_samples))
+for k in range(4):
+    th = np.pi * (k+1)**2 / 8
+    c = np.cos(th)
+    s = np.sin(th)
+    u = np.array([[c,-s],[s,c]])
+    phi[:,k,:] = u @ psi[:,k,:]
+
+psi_sigma = np.zeros((2, n_samples))
+phi_sigma = np.zeros((2, n_samples))
+
+for tau in range(n_samples):
+    u, s, v = np.linalg.svd(psi[:,:,tau])
+    psi_sigma[:, tau] = s
+    u, s, v = np.linalg.svd(phi[:,:,tau])
+    phi_sigma[:, tau] = s
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(
+        x=t,
+        y=psi_sigma[0,:],
+        mode='lines',
+        line=dict(color='navy', width=3),
+        name='$\sigma_1(\Psi(t))$'
+))
+
+fig.add_trace(go.Scatter(
+    x=t,
+    y=psi_sigma[1,:],
+    mode='lines',
+    line=dict(color='blue', width=3),
+    name='$\sigma_2(\Psi(t))$'
+))
+
+fig.add_trace(go.Scatter(
+    x=t,
+    y=phi_sigma[0,:],
+    mode='lines',
+    line=dict(color='green', width=3),
+    name='$\sigma_1(\Phi(t))$'
+))
+
+fig.add_trace(go.Scatter(
+    x=t,
+    y=phi_sigma[1,:],
+    mode='lines',
+    line=dict(color='lime', width=3),
+    name='$\sigma_2(\Phi(t))$'
+))
+
+fig.update_layout(font_family="Computer Modern",
+                  font_size=30,
+                  xaxis_title="time slice $t$",
+                  legend=dict(itemsizing='constant',
+                              orientation="h",
+                              yanchor="top",
+                              y=1.0,
+                              xanchor="center",
+                              x=0.75),
+                  )
+
+fig.show(renderer="browser")
+
 
 

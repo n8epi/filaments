@@ -36,10 +36,11 @@ def so3exp(k1,k2):
     A = np.array([[0,-a,0],[a,0,b],[0,-b,0]])
     return np.eye(3) + np.sin(k)*A + (1-np.cos(k))*(A@A)
 
-def camera_coordinates(th=0.15, zoom=0.6):
+def camera_coordinates(th=0.15, zed=1.0, zoom=0.6):
     '''
     Function for getting scene camera coordinates
     :param th: angle in the x-y plane
+    :parma z: lift above z-axis
     :param zoom: zoom indicator
     :return: dictionary of camera information
     '''
@@ -48,7 +49,7 @@ def camera_coordinates(th=0.15, zoom=0.6):
     sc = np.sin(2*np.pi*th)
     xc = zoom*(-1*cc-2*sc)
     yc = zoom*(-2*cc+sc)
-    zc = zoom*1.5
+    zc = zoom*zed
     camera = dict(
         up=dict(x=0, y=0, z=1),
         center=dict(x=0, y=0, z=0),
@@ -56,6 +57,19 @@ def camera_coordinates(th=0.15, zoom=0.6):
     )
     return camera
 
+def psi_fcn(d, q):
+    '''
+    Closures for continuous curve functions
+    :param d: dimension of the data
+    :param q: curve coefficients vector
+    :return: continuous 2D Andrew's plot function (phase shifted)
+    '''
+    g = np.array(range(d))+1
+    qps = g**2/(4*d)
+    def psi(s):
+
+        return np.array([np.cos(2*np.pi*(g*s+qps)), np.sin(2*np.pi*(g*s+qps))]) @ q
+    return psi
 
 def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = False, curve_factor=1.0):
     '''
@@ -72,36 +86,55 @@ def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = F
 
     U,S,V = np.linalg.svd(X, full_matrices=False)
     Y = U @ np.diag(np.sqrt(S))
+    if center_index is not False:
+        Y = Y - Y[center_index,:]
 
     # Compute the embedding
     t = np.linspace(0,1,res)
     N = X.shape[0]
     d = X.shape[1]
-    Psi = np.zeros((2,d,res))
+    Psi = np.zeros((2, d, res))
     for j in range(d):
         k = j+1
         ck = np.cos(2*np.pi*(k**2)/(4*d))
         sk = np.sin(2*np.pi*(k**2)/(4*d))
         U = np.reshape([ck,-sk,sk,ck], (2,2))
-        Psi[0, j, :] = np.sin(2*np.pi*k*t)/k
-        Psi[1, j, :] = -np.cos(2*np.pi*k*t)/k
+        Psi[0, j, :] = np.cos(2*np.pi*k*t)
+        Psi[1, j, :] = np.sin(2*np.pi*k*t)
         Psi[:, j, :] = U @ Psi[:,j,:]
 
     # The final embedding
-    E = np.dot(Y,Psi)
+    E = curve_factor * np.dot(Y,Psi)
 
-    if center_index is not False:
-        E = E - E[center_index,:,:]
-
-    E = curve_factor * E
     # E is an N by 2 by res matrix; we form the new path matrix F which is N by 3 by res, and update
 
     dt = 1/(res-1)
     F = np.zeros((N,3,res))
     for n in range(N):
+        u_n = np.eye(3)
+        psi_n = psi_fcn(d,Y[n, :])
         for r in range(res):
-            F[n,:,r] = so3exp(E[n,0,r], E[n,1,r])[1,:]*dt
-        F[n,:,:] = np.cumsum(F[n,:,:], axis=1)
+            # Lie-Euler first-order method
+            # u_n = so3exp(dt*E[n,0,r], dt*E[n,1,r]) @ u_n
+
+            # Crouch-Grossman third-order method
+            t1 = t[r]
+            t2 = t1 + (3*dt)/4
+            t3 = t1 + (17*dt)/24
+
+            v1 = (24*psi_n(t1)*dt)/17
+            v2 = (-2*psi_n(t2)*dt)/3
+            v3 = (13*psi_n(t3)*dt)/51
+
+            q1 = so3exp(v1[0], v1[1])
+            q2 = so3exp(v2[0], v2[1])
+            q3 = so3exp(v3[0], v3[1])
+
+            u_n = q3 @ q2 @ q1 @ u_n
+
+            F[n, :, r] = u_n[1, :]
+
+        F[n, :, :] = np.cumsum(F[n, :, :], axis=1)
 
     ii = np.argsort(label_index)
     label_index_ = label_index[ii]
@@ -128,7 +161,7 @@ def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = F
         label_legend[label_index_[n]] = False
 
     fig.update_layout(font_family="Computer Modern",
-                      font_size=30,
+                      font_size=20,
                       legend=dict(itemsizing='constant',
                                   orientation="h",
                                   yanchor="bottom",
@@ -137,7 +170,7 @@ def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = F
                                   x=0.5,
                                   bordercolor="Black",
                                   borderwidth=4),
-                      scene_camera=camera_coordinates())
+                      scene_camera=camera_coordinates(th=0.4, zed=-1.0, zoom=0.8))
     fig.update_scenes(xaxis_visible=False, yaxis_visible=False,zaxis_visible=False )
     fig.show(renderer="browser")
 
