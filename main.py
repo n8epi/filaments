@@ -174,6 +174,9 @@ def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = F
     fig.update_scenes(xaxis_visible=False, yaxis_visible=False,zaxis_visible=False )
     fig.show(renderer="browser")
 
+    # Optional code for writing the plot to html
+    #fig.write_html('index.html', include_plotlyjs='cdn')
+
 
 def andrews2D(X, label_index, labels, color_scale, res = 64, extent=10.0, center_index = False):
     '''
