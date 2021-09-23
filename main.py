@@ -71,7 +71,7 @@ def psi_fcn(d, q):
         return np.array([np.cos(2*np.pi*(g*s+qps)), np.sin(2*np.pi*(g*s+qps))]) @ q
     return psi
 
-def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = False, curve_factor=1.0):
+def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = False, curve_factor=1.0, write_mode=False):
     '''
     Filament plot for categorical data
     :param X: data matrix with examples in rows (columns are features)
@@ -81,6 +81,7 @@ def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = F
     :param res: the resolution of the resulting embedding (default is 64 time samples)
     :param center_index: optional index of a data point for ``relativization" of the plot
     :param curve_factor: optional scalar for exaggerating curvatures
+    :param write_mode: optional parameter for writing to an index html
     :return: none
     '''
 
@@ -174,8 +175,11 @@ def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = F
     fig.update_scenes(xaxis_visible=False, yaxis_visible=False,zaxis_visible=False )
     fig.show(renderer="browser")
 
-    # Optional code for writing the plot to html
-    #fig.write_html('index.html', include_plotlyjs='cdn')
+    if write_mode == 1:
+        fig.write_html('index.html', include_plotlyjs='cdn')
+    if write_mode == 2:
+        with open('index.html', 'a') as f:
+            f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
 
 def andrews2D(X, label_index, labels, color_scale, res = 64, extent=10.0, center_index = False):
@@ -344,6 +348,7 @@ def iris_plots():
     cs = ['#a6cee3', '#1f78b4', '#b2df8a']
     andrews2D(X, y, labels, cs, extent=1.0)
     filamentPlot(X, y, labels, cs)
+    #filamentPlot(X, y, labels, cs, write_mode=1)
 
 def boston_plots():
     '''
@@ -359,6 +364,7 @@ def boston_plots():
     cs = ['#a50026','#d73027','#f46d43','#fdae61','#fee090','#e0f3f8','#abd9e9','#74add1','#4575b4','#313695']
     andrews2D(X, y, labels, cs, res=128, extent=1.0)
     filamentPlot(X, y, labels, cs, res=128)
+    #filamentPlot(X, y, labels, cs, write_mode=2)
 
 def breast_cancer_plots():
     '''
@@ -374,6 +380,7 @@ def breast_cancer_plots():
     labels = ['malignant', 'benign']
     andrews2D(X, y, labels, cs, res=128, extent=3.0)
     filamentPlot(X, y, labels, cs, res=128)
+    #filamentPlot(X, y, labels, cs, res=128, write_mode=2)
 
 def digit_plots():
     '''
@@ -389,6 +396,7 @@ def digit_plots():
     cs = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c', '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a']
     andrews2D(X, y, labels, cs, res=256, extent=1.0)
     filamentPlot(X, y, labels, cs, res=256)
+    #filamentPlot(X, y, labels, cs, res=256, write_mode=2)
 
 
 if __name__ == '__main__':
