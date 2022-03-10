@@ -39,7 +39,7 @@ def so3exp(k1,k2):
 def camera_coordinates(th=0.15, zed=1.0, zoom=0.6):
     '''
     Function for getting scene camera coordinates
-    :param th: angle in the x-y plane
+    :param th: angle in the x-y plane with range -1/2 to 1/2
     :parma z: lift above z-axis
     :param zoom: zoom indicator
     :return: dictionary of camera information
@@ -71,9 +71,9 @@ def psi_fcn(d, q):
         return np.array([np.cos(2*np.pi*(g*s+qps)), np.sin(2*np.pi*(g*s+qps))]) @ q
     return psi
 
-def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = False, curve_factor=1.0, write_mode=False):
+def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = False, curve_factor=1.0, write_mode=False, cam=None):
     '''
-    Filament plot for categorical data
+    Filament plot euclidean data with categorical labels
     :param X: data matrix with examples in rows (columns are features)
     :param label_index: integer classes for the categories
     :param labels: category labels
@@ -82,10 +82,14 @@ def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = F
     :param center_index: optional index of a data point for ``relativization" of the plot
     :param curve_factor: optional scalar for exaggerating curvatures
     :param write_mode: optional parameter for writing to an index html
+    :param cam: scene camera information
     :return: none
     '''
 
-    U,S,V = np.linalg.svd(X, full_matrices=False)
+    if cam == None:
+        cam = camera_coordinates(th=-0.3, zed=-1.0, zoom=0.5)
+
+    U, S, V = np.linalg.svd(X, full_matrices=False)
     Y = U @ np.diag(np.sqrt(S))
     if center_index is not False:
         Y = Y - Y[center_index,:]
@@ -162,16 +166,16 @@ def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = F
         label_legend[label_index_[n]] = False
 
     fig.update_layout(font_family="Computer Modern",
-                      font_size=20,
+                      font_size=16,
                       legend=dict(itemsizing='constant',
-                                  orientation="h",
-                                  yanchor="bottom",
-                                  y=0.1,
-                                  xanchor="center",
-                                  x=0.5,
+                                  orientation="v",
+                                  yanchor="top",
+                                  y=0.9,
+                                  xanchor="right",
+                                  x=0.9,
                                   bordercolor="Black",
                                   borderwidth=4),
-                      scene_camera=camera_coordinates(th=0.4, zed=-1.0, zoom=0.8))
+                      scene_camera=cam)
     fig.update_scenes(xaxis_visible=False, yaxis_visible=False,zaxis_visible=False )
     fig.show(renderer="browser")
 
@@ -182,9 +186,9 @@ def filamentPlot(X, label_index, labels, color_scale, res = 64, center_index = F
             f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
 
-def andrews2D(X, label_index, labels, color_scale, res = 64, extent=10.0, center_index = False):
+def andrews3D(X, label_index, labels, color_scale, res = 64, extent=10.0, center_index = False, cam = None, only3d = False):
     '''
-    2D Andrews plots: animated scatter plots, static plots of the curve images, and 2D+1D graph plots
+    3D Andrews plots: animated scatter plots, static plots of the 2D curves, and 2D+1D graph plots
     :param X: data matrix with examples in rows (columns are features)
     :param label_index: integer classes for the categories
     :param labels: category labels
@@ -192,8 +196,13 @@ def andrews2D(X, label_index, labels, color_scale, res = 64, extent=10.0, center
     :param res: the resolution of the resulting embedding (default is 64 time samples)
     :param extent: symmetric limit for the x and y range of the plot
     :param center_index: optional index of a data point for ``relativization" of the plot
+    :param cam: scene camera information
+    :param only3d: binary indicating whether to just plot the 3D Andrews plot, default is False
     :return: none
     '''
+
+    if cam == None:
+        cam = camera_coordinates(th=-0.3, zed=-1.0, zoom=0.5)
 
     # Perform pca on the data matrix
     U,S,V = np.linalg.svd(X, full_matrices=False)
@@ -237,15 +246,15 @@ def andrews2D(X, label_index, labels, color_scale, res = 64, extent=10.0, center
                      color_discrete_map=col_dict
                      )
     fig.update_layout(font_family="Computer Modern",
-                      font_size=30,
+                      font_size=16,
                       legend=dict(itemsizing='constant',
-                                  orientation="h",
+                                  orientation="v",
                                   title=dict(text=''),
                                   bgcolor = 'white',
-                                  yanchor="bottom",
-                                  y=0.1,
-                                  xanchor="center",
-                                  x=0.5,
+                                  yanchor="top",
+                                  y=0.9,
+                                  xanchor="right",
+                                  x=0.9,
                                   bordercolor="Black",
                                   borderwidth=4),
                       paper_bgcolor='rgba(0,0,0,0)',
@@ -254,7 +263,9 @@ def andrews2D(X, label_index, labels, color_scale, res = 64, extent=10.0, center
     fig.update_xaxes(visible=False)
     fig.update_yaxes(visible=False)
     fig.update_traces(marker=dict(size=12), selector=dict(mode='markers'))
-    fig.show(renderer="browser")
+
+    if not only3d:
+        fig.show(renderer="browser")
 
 
     fig = go.Figure()
@@ -277,24 +288,26 @@ def andrews2D(X, label_index, labels, color_scale, res = 64, extent=10.0, center
         label_legend[label_index_[n]] = False
 
     fig.update_layout(font_family="Computer Modern",
-                      font_size=30,
+                      font_size=16,
                       paper_bgcolor='rgba(0,0,0,0)',
                       plot_bgcolor='rgba(0,0,0,0)',
                       legend=dict(itemsizing='constant',
-                                  orientation="h",
+                                  orientation="v",
                                   title=dict(text=''),
                                   bgcolor = 'white',
-                                  yanchor="bottom",
-                                  y=0.1,
-                                  xanchor="center",
-                                  x=0.5,
+                                  yanchor="top",
+                                  y=0.9,
+                                  xanchor="right",
+                                  x=0.9,
                                   bordercolor="Black",
                                   borderwidth=4)
                       )
     fig.update_yaxes(scaleanchor = "x", scaleratio = 1)
     fig.update_xaxes(visible=False)
     fig.update_yaxes(visible=False)
-    fig.show(renderer="browser")
+
+    if not only3d:
+        fig.show(renderer="browser")
 
     label_legend = [True] * len(labels)
 
@@ -319,16 +332,16 @@ def andrews2D(X, label_index, labels, color_scale, res = 64, extent=10.0, center
 
 
     fig.update_layout(font_family="Computer Modern",
-                      font_size=30,
+                      font_size=16,
                       legend=dict(itemsizing='constant',
-                                  orientation="h",
-                                  yanchor="bottom",
-                                  y=0.1,
-                                  xanchor="center",
-                                  x=0.5,
+                                  orientation="v",
+                                  yanchor="top",
+                                  y=0.9,
+                                  xanchor="right",
+                                  x=0.9,
                                   bordercolor="Black",
                                   borderwidth=4),
-                      scene_camera=camera_coordinates()
+                      scene_camera=cam
                       )
     fig.update_scenes(xaxis_visible=False, yaxis_visible=False,zaxis_visible=False )
     fig.show(renderer="browser")
@@ -346,9 +359,11 @@ def iris_plots():
     y = le.fit_transform(iris.target)
     labels = iris.target_names
     cs = ['#a6cee3', '#1f78b4', '#b2df8a']
-    andrews2D(X, y, labels, cs, extent=1.0)
-    filamentPlot(X, y, labels, cs)
-    #filamentPlot(X, y, labels, cs, write_mode=1)
+    cam = camera_coordinates(th=-0.3, zed=-1.0, zoom=0.52)
+    andrews3D(X, y, labels, cs, extent=1.0, cam=cam, only3d=True)
+    cam = camera_coordinates(th=-0.3, zed=-1.0, zoom=0.5)
+    filamentPlot(X, y, labels, cs, cam=cam)
+    #filamentPlot(X, y, labels, cs, cam=cam, write_mode=1)
 
 def boston_plots():
     '''
@@ -362,9 +377,11 @@ def boston_plots():
     y = pd.qcut(boston.target, 10, labels=False)
     labels = ['0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '1.0']
     cs = ['#a50026','#d73027','#f46d43','#fdae61','#fee090','#e0f3f8','#abd9e9','#74add1','#4575b4','#313695']
-    andrews2D(X, y, labels, cs, res=128, extent=1.0)
-    filamentPlot(X, y, labels, cs, res=128)
-    #filamentPlot(X, y, labels, cs, write_mode=2)
+    cam = camera_coordinates(th=-0.3, zed=-1.0, zoom=0.51)
+    andrews3D(X, y, labels, cs, res=128, extent=1.0, cam=cam, only3d=True)
+    cam = camera_coordinates(th=-0.25, zed=-1.0, zoom=0.5)
+    filamentPlot(X, y, labels, cs, res=128, cam=cam)
+    #filamentPlot(X, y, labels, cs, cam=cam, write_mode=2)
 
 def breast_cancer_plots():
     '''
@@ -378,9 +395,11 @@ def breast_cancer_plots():
     y = bc.target
     cs = ['#a50026', '#313695']
     labels = ['malignant', 'benign']
-    andrews2D(X, y, labels, cs, res=128, extent=3.0)
-    filamentPlot(X, y, labels, cs, res=128)
-    #filamentPlot(X, y, labels, cs, res=128, write_mode=2)
+    cam = camera_coordinates(th=-0.3, zed=-1.0, zoom=0.51)
+    andrews3D(X, y, labels, cs, res=128, extent=3.0, cam=cam, only3d=True)
+    cam = camera_coordinates(th=-0.3, zed=0.0, zoom=0.6)
+    filamentPlot(X, y, labels, cs, res=128, cam=cam)
+    #filamentPlot(X, y, labels, cs, res=128, cam=cam, write_mode=2)
 
 def digit_plots():
     '''
@@ -394,8 +413,10 @@ def digit_plots():
     y = dig.target
     labels = [str(j) for j in dig.target_names]
     cs = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c', '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a']
-    andrews2D(X, y, labels, cs, res=256, extent=1.0)
-    filamentPlot(X, y, labels, cs, res=256)
+    cam = camera_coordinates(th=-0.3, zed=-1.0, zoom=0.51)
+    andrews3D(X, y, labels, cs, res=256, extent=1.0, cam=cam, only3d=True)
+    cam = camera_coordinates(th=-0.3, zed=-1.0, zoom=0.55)
+    filamentPlot(X, y, labels, cs, res=256, cam = cam)
     #filamentPlot(X, y, labels, cs, res=256, write_mode=2)
 
 

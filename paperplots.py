@@ -40,9 +40,7 @@ def andrews1D(X, y, cs, labels):
 
     label_legend = [True] * len(labels)
 
-    fig = make_subplots(rows=1,
-                        cols=3,
-                        subplot_titles=("Raw Coefficients","Standardized Coefficients", "PCA Coefficients after Standardization"))
+    fig = make_subplots(rows=1, cols=3)
 
     for n in range(0,N):
         fig.add_trace(go.Scatter(
@@ -89,7 +87,7 @@ def andrews1D(X, y, cs, labels):
     fig.update_xaxes(visible=False)
     fig.update_yaxes(visible=False)
 
-    fig.show(renderer="browser")
+    fig.show()
 
 def parallel(X, y, cs, features, labels):
 
@@ -102,7 +100,7 @@ def parallel(X, y, cs, features, labels):
 
     label_legend = [True] * len(labels)
 
-    fig = make_subplots(rows=1, cols=1, subplot_titles=(["Parallel Coordinates"]))
+    fig = make_subplots(rows=1, cols=1)
 
     for n in range(0,N):
         fig.add_trace(go.Scatter(
@@ -127,7 +125,7 @@ def parallel(X, y, cs, features, labels):
                       )
                       )
 
-    fig.show(renderer="browser")
+    fig.show()
 
 def plotAndrewsTensor2D(d):
 
@@ -191,7 +189,7 @@ def plotAndrewsTensor2D(d):
         showlegend=False)
     )
 
-    fig.show(renderer="browser")
+    fig.show()
 
 
 ### some code now...
@@ -319,48 +317,33 @@ for tau in range(n_samples):
 fig = go.Figure()
 fig.add_trace(go.Scatter(
         x=t,
-        y=psi_sigma[0,:],
+        y=psi_sigma[0,:]-psi_sigma[1,:],
         mode='lines',
-        line=dict(color='navy', width=3),
-        name='$\sigma_1(\Psi(t))$'
+        line=dict(color='blue', width=3),
+        name=r'$\sigma_1(\Psi(t))-\sigma_2(\Psi(t))$'
 ))
 
 fig.add_trace(go.Scatter(
     x=t,
-    y=psi_sigma[1,:],
-    mode='lines',
-    line=dict(color='blue', width=3),
-    name='$\sigma_2(\Psi(t))$'
-))
-
-fig.add_trace(go.Scatter(
-    x=t,
-    y=phi_sigma[0,:],
+    y=phi_sigma[0,:]-phi_sigma[1,:],
     mode='lines',
     line=dict(color='green', width=3),
-    name='$\sigma_1(\Phi(t))$'
-))
-
-fig.add_trace(go.Scatter(
-    x=t,
-    y=phi_sigma[1,:],
-    mode='lines',
-    line=dict(color='lime', width=3),
-    name='$\sigma_2(\Phi(t))$'
+    name=r'$\sigma_1(\Phi(t))-\sigma_2(\Phi(t))$'
 ))
 
 fig.update_layout(font_family="Computer Modern",
                   font_size=30,
-                  xaxis_title="time slice $t$",
-                  legend=dict(itemsizing='constant',
-                              orientation="h",
+                  xaxis_title="time slice r$t$",
+                  legend=dict(font_size=16,
+                              itemsizing='constant',
+                              orientation="v",
                               yanchor="top",
                               y=1.0,
-                              xanchor="center",
+                              xanchor="right",
                               x=0.75),
                   )
 
-fig.show(renderer="browser")
+fig.show()
 
 
 
